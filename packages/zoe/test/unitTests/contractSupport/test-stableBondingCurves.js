@@ -12,7 +12,7 @@ import {
 import { getInputPrice } from '../../../src/contractSupport/index.js';
 
 const coins = ['RUN', 'USDT', 'DAI'];
-const values = [1000000n, 1000000n, 20000n];
+const values = [100000000n, 1000000n, 1000000n];
 let brands = coins.map(coin => makeIssuerKit(coin).brand);
 
 const createTokenAmounts = () => {
@@ -29,6 +29,7 @@ const testGetStableInputPrice = (
   const output = getStableInputPrice(
     inputAmount,
     tokenIndexFrom,
+    tokenIndexTo,
     centralTokenIndex,
     poolValues,
   );
@@ -38,13 +39,14 @@ const testGetStableInputPrice = (
 
 const testGetStableOutputPrice = (
   t,
-  { outputAmount, tokenIndexFrom, tokenIndexTo, poolValues },
+  { outputAmount, tokenIndexFrom, tokenIndexTo, centralTokenIndex, poolValues },
   expectedOutput,
 ) => {
   const output = getStableOutputPrice(
     outputAmount,
     tokenIndexFrom,
     tokenIndexTo,
+    centralTokenIndex,
     poolValues,
   );
   console.log(output);
@@ -53,10 +55,10 @@ const testGetStableOutputPrice = (
 
 test('Test InputPriceFunction() : Code with Amounts', t => {
   const input = {
-    inputAmount: AmountMath.make(brands[0], 1000n),
-    tokenIndexFrom: 0,
-    tokenIndexTo: 1,
-    centralTokenIndex: 1,
+    inputAmount: AmountMath.make(brands[1], 1000n),
+    tokenIndexFrom: 1,
+    tokenIndexTo: 2,
+    centralTokenIndex: 0,
     poolValues: createTokenAmounts(),
   };
 
@@ -64,13 +66,14 @@ test('Test InputPriceFunction() : Code with Amounts', t => {
   testGetStableInputPrice(t, input, expectedOutput);
 });
 
-// test('Test OutputPriceFunction() : Code with Amounts', t => {
-//   const input = {
-//     outputAmount: AmountMath.make(brands[0], 2n),
-//     tokenIndexFrom: 0,
-//     tokenIndexTo: 1,
-//     poolValues: createTokenAmounts(),
-//   };
-//   const expectedOutput = 0n;
-//   testGetStableOutputPrice(t, input, expectedOutput);
-// });
+test('Test OutputPriceFunction() : Code with Amounts', t => {
+  const input = {
+    outputAmount: AmountMath.make(brands[1], 1000n),
+    tokenIndexFrom: 1,
+    tokenIndexTo: 2,
+    centralTokenIndex: 0,
+    poolValues: createTokenAmounts(),
+  };
+  const expectedOutput = 0n;
+  testGetStableOutputPrice(t, input, expectedOutput);
+});

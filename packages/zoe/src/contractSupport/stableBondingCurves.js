@@ -33,11 +33,36 @@ function revertConversion(value) {
 }
 
 /**
+ * Recompute the pool values after a swap is performed
+ * @param {bigint[]} poolValues - Array of amounts of each asset.Which is
+ *                                passed from the contract.
+ * @param {number} tokenIndexFrom - index of amount of inputReserve
+ *                                  in the reserves array.
+ * @param {number} tokenIndexTo - index of amount of outputReserve
+ *                                in the reserves array.
+ * @param {bigint} inputTokenValue - the value of swap in token passed in.
+ * @param {bigint} outputTokenValue - the value of swap out token returned
+ *                                    in exchange
+ * @returns {bigint[]} output - recomputed pool values
+ */
+const updatePoolValues = (
+  poolValues,
+  tokenIndexFrom,
+  inputTokenValue,
+  tokenIndexTo,
+  outputTokenValue,
+) => {
+  poolValues[tokenIndexFrom] -= inputTokenValue;
+  poolValues[tokenIndexTo] += outputTokenValue;
+  return poolValues;
+};
+
+/**
  * Computes the Stable Swap invariant (D).
  * @param {bigint[]} poolValues - Array of amounts of each asset.Which is
  * passed from the contract.
  * @returns {bigint} d - the current price, in value form
-
+ *
  */
 const getD = poolValues => {
   let N_COINS = poolValues.length;
@@ -170,7 +195,7 @@ const calculateSwap = (dx, tokenIndexFrom, tokenIndexTo, poolValues) => {
  * @param {number} tokenIndexFrom - index of input token amount in poolAmounts array.
  * @param {number} tokenIndexTo - index of output token amount in poolAmounts array.
  * @param {number} centralTokenIndex - index of centeral token amount in poolAmounts array.
- * @param {Amount[]} poolAmounts - Array of Amounts of each token in the pool.Which is passed 
+ * @param {Amount[]} poolAmounts - Array of Amounts of each token in the pool.Which is passed
  * from the function.
  * @param {bigint} [feeBasisPoints=30n] - the fee taken in
  * basis points. The default is 0.3% or 30 basis points. The fee
@@ -188,6 +213,7 @@ export const getStableInputPrice = (
   poolAmounts,
   feeBasisPoints = 30n,
 ) => {
+  let centralReserve = poolAmounts[centralTokenIndex];
   let inputReserve = poolAmounts[tokenIndexFrom];
   let outputReserve = poolAmounts[tokenIndexTo];
   assert(
@@ -225,15 +251,29 @@ export const getStableInputPrice = (
     return { ...amount, value: amount.value * BASIS_POINTS };
   });
   let poolValues = poolAmountsInBasisPoints.map(amount => amount.value);
-  let swapResult = calculateSwap(
+  let firstSwapResult = calculateSwap(
     inputAmountAfterFeeCut.value,
     tokenIndexFrom,
+    centralTokenIndex,
+    poolValues,
+  );
+  poolValues = updatePoolValues(
+    poolValues,
+    tokenIndexFrom,
+    inputAmountWithoutFeeCut.value,
+    centralTokenIndex,
+    firstSwapResult.outputValue,
+  );
+
+  let secondSwapResult = calculateSwap(
+    firstSwapResult.outputValue,
+    centralTokenIndex,
     tokenIndexTo,
     poolValues,
   );
   let outputAmount = AmountMath.make(
     poolAmounts[tokenIndexTo].brand,
-    swapResult.outputValue,
+    secondSwapResult.outputValue,
   );
   let priceRatio = makeRatioFromAmounts(outputAmount, inputAmountWithoutFeeCut);
   inputAmountWithoutFeeCut = {
@@ -242,7 +282,7 @@ export const getStableInputPrice = (
   };
   outputAmount = {
     ...outputAmount,
-    value: swapResult.outputValue / BASIS_POINTS,
+    value: secondSwapResult.outputValue / BASIS_POINTS,
   };
   return {
     priceRatio: priceRatio,
@@ -266,6 +306,7 @@ export const getStableInputPrice = (
  * in the reserves array.
  * @param {number} tokenIndexTo - index of amount of outputReserve
  * in the reserves array.
+ * @param {number} centralTokenIndex - index of centeral token amount in poolAmounts array.
  * @param {Amount[]} poolAmounts - Array of amounts of each asset.Which is
  * passed from the contract.
  * @param {bigint} [feeBasisPoints=30n] - the fee taken in
@@ -278,6 +319,7 @@ export const getStableOutputPrice = (
   outputAmount,
   tokenIndexFrom,
   tokenIndexTo,
+  centralTokenIndex,
   poolAmounts,
   feeBasisPoints = 30n,
 ) => {
@@ -307,15 +349,43 @@ export const getStableOutputPrice = (
     return { ...amount, value: amount.value * BASIS_POINTS };
   });
   let poolValues = poolAmountsInBasisPoints.map(amount => amount.value);
-  let swapResult = calculateSwap(
+  console.log(
     outputAmountBasis.value,
     tokenIndexFrom,
+    centralTokenIndex,
+    poolValues,
+  );
+  let firstSwapResult = calculateSwap(
+    outputAmountBasis.value,
+    tokenIndexFrom,
+    centralTokenIndex,
+    poolValues,
+  );
+  console.log('firstSwapResult', firstSwapResult);
+  poolValues = updatePoolValues(
+    poolValues,
+    tokenIndexTo,
+    outputAmountBasis.value,
+    centralTokenIndex,
+    firstSwapResult.outputValue,
+  );
+  console.log('poolValues', poolValues);
+  console.log(
+    firstSwapResult.outputValue,
+    centralTokenIndex,
     tokenIndexTo,
     poolValues,
   );
+  let secondSwapResult = calculateSwap(
+    firstSwapResult.outputValue,
+    centralTokenIndex,
+    tokenIndexTo,
+    poolValues,
+  );
+  console.log('secondSwapResult.outputValue:', secondSwapResult.outputValue);
   let inputAmount = AmountMath.make(
     poolAmounts[tokenIndexTo].brand,
-    swapResult.outputValue,
+    secondSwapResult.outputValue,
   );
   const feeCutRatio = makeRatio(
     BASIS_POINTS - feeBasisPoints,
