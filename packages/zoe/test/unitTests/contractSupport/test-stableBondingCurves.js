@@ -11,8 +11,8 @@ import {
 
 import { getInputPrice } from '../../../src/contractSupport/index.js';
 
-const coins = ['RUN', 'USDT'];
-const values = [1000000n, 1000000n];
+const coins = ['RUN', 'USDT', 'DAI'];
+const values = [1000000n, 1000000n, 20000n];
 let brands = coins.map(coin => makeIssuerKit(coin).brand);
 
 const createTokenAmounts = () => {
@@ -23,13 +23,13 @@ const createTokenAmounts = () => {
 
 const testGetStableInputPrice = (
   t,
-  { inputAmount, tokenIndexFrom, tokenIndexTo, poolValues },
+  { inputAmount, tokenIndexFrom, tokenIndexTo, centralTokenIndex, poolValues },
   expectedOutput,
 ) => {
   const output = getStableInputPrice(
     inputAmount,
     tokenIndexFrom,
-    tokenIndexTo,
+    centralTokenIndex,
     poolValues,
   );
   console.log(output);
@@ -53,9 +53,10 @@ const testGetStableOutputPrice = (
 
 test('Test InputPriceFunction() : Code with Amounts', t => {
   const input = {
-    inputAmount: AmountMath.make(brands[0], 3n),
+    inputAmount: AmountMath.make(brands[0], 1000n),
     tokenIndexFrom: 0,
     tokenIndexTo: 1,
+    centralTokenIndex: 1,
     poolValues: createTokenAmounts(),
   };
 
@@ -63,13 +64,13 @@ test('Test InputPriceFunction() : Code with Amounts', t => {
   testGetStableInputPrice(t, input, expectedOutput);
 });
 
-test('Test OutputPriceFunction() : Code with Amounts', t => {
-  const input = {
-    outputAmount: AmountMath.make(brands[0], 2n),
-    tokenIndexFrom: 0,
-    tokenIndexTo: 1,
-    poolValues: createTokenAmounts(),
-  };
-  const expectedOutput = 0n;
-  testGetStableOutputPrice(t, input, expectedOutput);
-});
+// test('Test OutputPriceFunction() : Code with Amounts', t => {
+//   const input = {
+//     outputAmount: AmountMath.make(brands[0], 2n),
+//     tokenIndexFrom: 0,
+//     tokenIndexTo: 1,
+//     poolValues: createTokenAmounts(),
+//   };
+//   const expectedOutput = 0n;
+//   testGetStableOutputPrice(t, input, expectedOutput);
+// });

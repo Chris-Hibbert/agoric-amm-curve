@@ -167,12 +167,11 @@ const calculateSwap = (dx, tokenIndexFrom, tokenIndexTo, poolValues) => {
  *
  * @param {Amount} inputAmount - the Amount of the asset sent
  * in to be swapped.
- * @param {number} tokenIndexFrom - index of amount of inputReserve
- * in the reserves array.
- * @param {number} tokenIndexTo - index of amount of outputReserve
- * in the reserves array.
- * @param {Amount[]} poolAmounts - Array of Amountsof each asset.Which is
- * passed from the contract.
+ * @param {number} tokenIndexFrom - index of input token amount in poolAmounts array.
+ * @param {number} tokenIndexTo - index of output token amount in poolAmounts array.
+ * @param {number} centralTokenIndex - index of centeral token amount in poolAmounts array.
+ * @param {Amount[]} poolAmounts - Array of Amounts of each token in the pool.Which is passed 
+ * from the function.
  * @param {bigint} [feeBasisPoints=30n] - the fee taken in
  * basis points. The default is 0.3% or 30 basis points. The fee
  * is taken from inputValue
@@ -185,6 +184,7 @@ export const getStableInputPrice = (
   inputAmount,
   tokenIndexFrom,
   tokenIndexTo,
+  centralTokenIndex,
   poolAmounts,
   feeBasisPoints = 30n,
 ) => {
@@ -202,8 +202,7 @@ export const getStableInputPrice = (
     outputReserve.value > 0n,
     X`outputReserve ${outputReserve.value} must be positive`,
   );
-  // Fee ration calculation
-
+  // Fee ratio calculation
   const feeCutRatio = makeRatio(
     BASIS_POINTS - feeBasisPoints,
     inputAmount.brand,
@@ -212,6 +211,7 @@ export const getStableInputPrice = (
   );
   // Fee ratio multiplied by inputAmount to get inputAmount After fee cut
   let inputAmountAfterFeeCut = floorMultiplyBy(inputAmount, feeCutRatio);
+  // Normalizing input amount according to pool value
   inputAmountAfterFeeCut = {
     brand: inputAmountAfterFeeCut.brand,
     value: inputAmountAfterFeeCut.value * BASIS_POINTS,
