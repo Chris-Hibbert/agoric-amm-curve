@@ -24,14 +24,6 @@ function within10(a, b) {
   return b - a <= 10;
 }
 
-function revertConversion(value) {
-  if (Number(value) / Number(BASIS_POINTS) > 0.5) {
-    return floorDivide(value, BASIS_POINTS);
-  } else {
-    return floorDivide(value, BASIS_POINTS);
-  }
-}
-
 /**
  * Recompute the pool values after a swap is performed
  * @param {bigint[]} poolValues - Array of amounts of each asset.Which is
@@ -369,20 +361,12 @@ export const getStableOutputPrice = (
     centralTokenIndex,
     firstSwapResult.outputValue,
   );
-  console.log('poolValues', poolValues);
-  console.log(
-    firstSwapResult.outputValue,
-    centralTokenIndex,
-    tokenIndexTo,
-    poolValues,
-  );
   let secondSwapResult = calculateSwap(
     firstSwapResult.outputValue,
     centralTokenIndex,
     tokenIndexTo,
     poolValues,
   );
-  console.log('secondSwapResult.outputValue:', secondSwapResult.outputValue);
   let inputAmount = AmountMath.make(
     poolAmounts[tokenIndexTo].brand,
     secondSwapResult.outputValue,

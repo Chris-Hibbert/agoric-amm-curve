@@ -68,7 +68,7 @@ test('Test InputPriceFunction() : Code with Amounts', t => {
 
 test('Test OutputPriceFunction() : Code with Amounts', t => {
   const input = {
-    outputAmount: AmountMath.make(brands[1], 1000n),
+    outputAmount: AmountMath.make(brands[2], 1000n),
     tokenIndexFrom: 1,
     tokenIndexTo: 2,
     centralTokenIndex: 0,
